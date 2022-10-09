@@ -107,7 +107,9 @@ first character) and negative end position should result in an empty
 string.
 -}
 subString :: Int -> Int -> [Char] -> [Char]
-subString start end str = take (end - start + 1) (drop start str)
+subString start end str
+    | end >= 0 = take (end - (max 0 start) + 1) (drop start str)
+    | otherwise = ""
 
 {- | Write a function that takes a String — space separated numbers,
 and finds a sum of the numbers inside this string.
@@ -120,10 +122,12 @@ The string contains only spaces and/or numbers.
 strSum :: String -> Int
 strSum str = calcIt 0 str
     where calcIt summ [] = summ
-          calcIt summ str1 = calcIt (summ + getInt (takeWhile charu (dropWhile space str1))) (dropWhile space (dropWhile charu str1))
+          calcIt summ str1 = calcIt (summ + getInt (takeWhile charu (dropWhile space str1))) (dropWhile charu (dropWhile space str1))
 
 getInt :: String -> Int
-getInt = read 
+getInt str
+    | str == "" = 0
+    | otherwise = read str
 
 space :: Char -> Bool
 space chr = chr == ' '
