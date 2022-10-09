@@ -119,8 +119,8 @@ The string contains only spaces and/or numbers.
 -}
 strSum :: String -> Int
 strSum str = calcIt 0 str
-    where calcIt sum [] = sum
-          calcIt sum str = calcIt (sum + getInt (takeWhile charu (dropWhile space str))) (dropWhile space (dropWhile charu str))
+    where calcIt summ [] = summ
+          calcIt summ str1 = calcIt (summ + getInt (takeWhile charu (dropWhile space str1))) (dropWhile space (dropWhile charu str1))
 
 getInt :: String -> Int
 getInt = read 
