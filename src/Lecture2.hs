@@ -58,7 +58,7 @@ lazyProduct :: [Int] -> Int
 lazyProduct = takeProd 1
 
 takeProd :: Int -> [Int] -> Int
-takeProd _ [] = 1
+takeProd cur [] = cur
 takeProd curProd (x:xs)
   | x == 0 = 0
   | otherwise = takeProd (curProd * x) xs
