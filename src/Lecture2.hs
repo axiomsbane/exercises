@@ -42,6 +42,9 @@ module Lecture2
 
 -- VVV If you need to import libraries, do it after this line ... VVV
 
+import Data.Char (isSpace)
+import Control.Concurrent (yield)
+
 -- ^^^ and before this line. Otherwise the test suite might fail  ^^^
 
 {- | Implement a function that finds a product of all the numbers in
@@ -52,7 +55,13 @@ zero, you can stop calculating product and return 0 immediately.
 84
 -}
 lazyProduct :: [Int] -> Int
-lazyProduct = error "TODO"
+lazyProduct = takeProd 1
+
+takeProd :: Int -> [Int] -> Int
+takeProd cur [] = cur
+takeProd curProd (x:xs)
+  | x == 0 = 0
+  | otherwise = takeProd (curProd * x) xs
 
 {- | Implement a function that duplicates every element in the list.
 
@@ -62,7 +71,7 @@ lazyProduct = error "TODO"
 "ccaabb"
 -}
 duplicate :: [a] -> [a]
-duplicate = error "TODO"
+duplicate = concat . map (\x -> [x, x]) 
 
 {- | Implement function that takes index and a list and removes the
 element at the given position. Additionally, this function should also
@@ -74,7 +83,16 @@ return the removed element.
 >>> removeAt 10 [1 .. 5]
 (Nothing,[1,2,3,4,5])
 -}
-removeAt = error "TODO"
+removeAt :: Int -> [a] -> (Maybe a, [a])
+removeAt idx lis
+  | idx >= 0 = (getIt idx lis, take idx lis ++ drop (idx + 1) lis)
+  | otherwise = (Nothing, lis) 
+
+getIt :: Int -> [a] -> Maybe a
+getIt _ [] = Nothing
+getIt idx (x:xs)
+  | idx == 0 = Just x
+  | otherwise = getIt (idx - 1) xs
 
 {- | Write a function that takes a list of lists and returns only
 lists of even lengths.
@@ -85,7 +103,8 @@ lists of even lengths.
 ♫ NOTE: Use eta-reduction and function composition (the dot (.) operator)
   in this function.
 -}
-evenLists = error "TODO"
+evenLists :: [[a]] -> [[a]]
+evenLists = filter (even .length) 
 
 {- | The @dropSpaces@ function takes a string containing a single word
 or number surrounded by spaces and removes all leading and trailing
@@ -101,7 +120,8 @@ spaces.
 
 🕯 HINT: look into Data.Char and Prelude modules for functions you may use.
 -}
-dropSpaces = error "TODO"
+dropSpaces :: String -> String
+dropSpaces = takeWhile (not . isSpace) . dropWhile isSpace 
 
 {- |
 
@@ -164,6 +184,13 @@ data Knight = Knight
     , knightEndurance :: Int
     }
 
+data Chest a = Chest 
+    { gold :: Int
+    , treasure :: a
+    }
+
+data Dragon = Red | Black | Green
+
 dragonFight = error "TODO"
 
 ----------------------------------------------------------------------------
@@ -185,7 +212,9 @@ False
 True
 -}
 isIncreasing :: [Int] -> Bool
-isIncreasing = error "TODO"
+isIncreasing [] = True
+isIncreasing [_] = True
+isIncreasing (x:y:ys) = (x <= y) && isIncreasing (y:ys)
 
 {- | Implement a function that takes two lists, sorted in the
 increasing order, and merges them into new list, also sorted in the
@@ -198,7 +227,13 @@ verify that.
 [1,2,3,4,7]
 -}
 merge :: [Int] -> [Int] -> [Int]
-merge = error "TODO"
+merge [] (y : ys) = y : ys
+merge (x : xs) [] = x : xs  
+merge [] [] = []
+merge (x:xs) (y:ys) = case (x <= y) of
+  True  -> x : merge  xs    (y:ys)
+  False -> y : merge (x:xs) (ys)
+
 
 {- | Implement the "Merge Sort" algorithm in Haskell. The @mergeSort@
 function takes a list of numbers and returns a new list containing the
@@ -215,7 +250,13 @@ The algorithm of merge sort is the following:
 [1,2,3]
 -}
 mergeSort :: [Int] -> [Int]
-mergeSort = error "TODO"
+mergeSort [] = []
+mergeSort [x] = [x]
+mergeSort lis = merge (mergeSort firstHalf) (mergeSort sndHalf)
+  where hlf = length lis `div` 2
+        firstHalf = take hlf lis
+        sndHalf = drop hlf lis
+
 
 
 {- | Haskell is famous for being a superb language for implementing
@@ -268,7 +309,15 @@ data EvalError
 It returns either a successful evaluation result or an error.
 -}
 eval :: Variables -> Expr -> Either EvalError Int
-eval = error "TODO"
+eval varMap (Var var) = case lookup var varMap of 
+  Nothing -> Left (VariableNotFound var)
+  Just x  -> Right x
+eval _ (Lit x) = Right x
+eval varMap (Add lef rig) = case (eval varMap lef, eval varMap rig) of 
+  (Left x, _)        -> Left x
+  (_, Left x)        -> Left x
+  (Right x, Right y) -> Right (x + y)
+
 
 {- | Compilers also perform optimizations! One of the most common
 optimizations is "Constant Folding". It performs arithmetic operations
@@ -291,5 +340,21 @@ x + 45 + y
 Write a function that takes and expression and performs "Constant
 Folding" optimization on the given expression.
 -}
+
 constantFolding :: Expr -> Expr
-constantFolding = error "TODO"
+constantFolding expr = case (splitIt expr [] 0) of 
+  ([], nums)   -> Lit nums
+  (vars , 0)   -> createExpr vars 
+  (vars, nums) -> Add (Lit nums) (createExpr vars)
+
+createExpr :: [String] -> Expr
+createExpr [x] = Var x
+createExpr [x,y] = Add (Var x) (Var y)
+createExpr (x:xs) = Add (Var x) (createExpr xs)
+
+splitIt :: Expr -> [String] -> Int -> ([String], Int)
+splitIt (Lit x) vars nums = (vars, x+nums)
+splitIt (Var v) vars nums = (v:vars, nums)
+splitIt (Add left right) vars nums = (fst ansL ++ fst ansR, snd ansL + snd ansR)
+  where ansL = splitIt left vars nums
+        ansR = splitIt right vars nums
